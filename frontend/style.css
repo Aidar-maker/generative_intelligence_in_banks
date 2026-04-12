@@ -1,0 +1,334 @@
+:root {
+  --bg: #1a1a24;
+  --card-bg: #252535;
+  --card-border: #3a3a50;
+  --text: #e6e6f0;
+  --text-dim: #a0a0b8;
+  --accent: #4a6fa5;
+  --accent-hover: #5a7fb5;
+  --error: #c75a6a;
+  --success: #5a8f6a;
+  --code-bg: #1e1e2e;
+  --input-bg: #2a2a3a;
+  --border-radius: 6px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+h1 {
+  text-align: center;
+  margin: 0 0 2rem;
+  color: var(--text);
+  font-weight: 500;
+  font-size: 1.4rem;
+  letter-spacing: 0.3px;
+}
+
+h2 {
+  margin: 0 0 1rem;
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 500;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--card-border);
+}
+
+h3 {
+  margin: 1.2rem 0 0.6rem;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  margin: 1rem 0 0.4rem;
+}
+
+textarea,
+input[type="text"] {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--border-radius);
+  color: var(--text);
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+textarea:focus,
+input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+button:hover {
+  background: var(--accent-hover);
+}
+
+button:disabled {
+  background: var(--card-border);
+  color: var(--text-dim);
+  cursor: not-allowed;
+}
+
+button.secondary {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--text-dim);
+}
+
+button.secondary:hover {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+button.success {
+  background: var(--success);
+}
+
+button.success:hover {
+  background: #6a9f7a;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--border-radius);
+  padding: 1.2rem;
+}
+
+/* Основная сетка страницы */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 1.2rem;
+  margin-bottom: 1.2rem;
+}
+
+.left-panel {
+  min-width: 0;
+}
+
+.right-panel {
+  min-width: 0;
+}
+
+/* Блок истории с прокруткой */
+.history-card {
+  height: fit-content;
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-list {
+  overflow-y: auto;
+  max-height: 400px;
+  flex: 1;
+  padding-right: 5px;
+}
+
+.history-item {
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  padding: 0.7rem;
+  margin-bottom: 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.history-item:hover {
+  border-color: var(--accent);
+  background: var(--card-border);
+}
+
+.history-date {
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 0.3rem;
+}
+
+.history-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.history-badge {
+  background: var(--card-border);
+  color: var(--text-dim);
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+}
+
+/* Секция результата */
+.full-width {
+  width: 100%;
+}
+
+.meta {
+  display: flex;
+  gap: 0.8rem;
+  margin: 0.8rem 0;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  background: var(--input-bg);
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.meta-item strong {
+  color: var(--accent);
+  margin-right: 0.3rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.8rem 0;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  border-bottom: 1px solid var(--card-border);
+}
+
+th {
+  color: var(--text-dim);
+  font-weight: 500;
+  background: transparent;
+}
+
+.editable {
+  background: var(--code-bg);
+  padding: 0.8rem;
+  border-radius: 4px;
+  font-family: 'Consolas', monospace;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  color: var(--text-dim);
+  border: 1px solid var(--card-border);
+  max-height: 250px;
+  overflow: auto;
+}
+
+.error {
+  color: var(--error);
+  background: rgba(199, 90, 106, 0.1);
+  padding: 0.8rem;
+  border-radius: var(--border-radius);
+  border-left: 3px solid var(--error);
+  display: none;
+  font-size: 0.9rem;
+  margin-bottom: 1.2rem;
+}
+
+.error.active {
+  display: block;
+}
+
+.loading {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  display: none;
+  padding: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.loading.active {
+  display: block;
+}
+
+.result {
+  display: none;
+}
+
+.result.active {
+  display: block;
+}
+
+.mt-1 { margin-top: 1rem; }
+.mb-1 { margin-bottom: 1rem; }
+.hidden { display: none !important; }
+
+/* Кастомный скроллбар для истории */
+.history-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.history-list::-webkit-scrollbar-track {
+  background: var(--bg);
+  border-radius: 3px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 3px;
+}
+
+.history-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+/* Общий скроллбар */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}

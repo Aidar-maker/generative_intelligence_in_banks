@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Генератор опросов</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Генератор опросов</h1>
+
+  <!-- Двухколоночный layout -->
+  <div class="main-grid">
+    <!-- Левая колонка: форма ввода -->
+    <div class="left-panel">
+      <div class="card">
+        <h2>Путь клиента</h2>
+        <label for="journey">Описание:</label>
+        <textarea id="journey" placeholder='{"steps": ["Зашел на сайт", "Открыл тарифы", "Скачал PDF"]}'></textarea>
+
+        <label for="hint">Подсказка (опционально):</label>
+        <input type="text" id="hint" placeholder="Например: акцент на навигацию" />
+
+        <button id="generateBtn" onclick="generateSurvey()" style="width: 100%; margin-top: 1rem;">Сгенерировать</button>
+      </div>
+    </div>
+
+    <!-- Правая колонка: история -->
+    <div class="right-panel">
+      <div class="card history-card">
+        <h2>История</h2>
+        <button onclick="loadHistory()" class="secondary" style="width: 100%; margin-bottom: 0.8rem;">Обновить</button>
+        <div id="historyList" class="history-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Результат на всю ширину -->
+  <div id="error" class="error"></div>
+  <div id="loading" class="loading">Обработка...</div>
+
+  <div id="result" class="result card full-width">
+    <h2>Результат</h2>
+    <div class="meta">
+      <div class="meta-item"><strong>Категория:</strong> <span id="resCategory"></span></div>
+      <div class="meta-item"><strong>Релевантность:</strong> <span id="resRelevance"></span></div>
+    </div>
+
+    <h3>Вопросы:</h3>
+    <table id="questionsTable">
+      <thead><tr><th>#</th><th>Вопрос</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h3>Промпт (отладка):</h3>
+    <div class="editable" id="promptPreview"></div>
+
+    <h3>Редактор JSON:</h3>
+    <textarea id="jsonEditor"></textarea>
+    <div class="mt-1" style="display: flex; gap: 0.8rem;">
+      <button onclick="applyEdit()" style="flex: 1;">Применить</button>
+      <button onclick="exportJSON()" class="success" style="flex: 1;">Экспорт</button>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:8000/api/generate';
+
+    async function loadHistory() {
+      try {
+        const res = await fetch('http://localhost:8000/api/surveys');
+        const items = await res.json();
+        const container = document.getElementById('historyList');
+
+        if (!items.length) {
+          container.innerHTML = '<p style="color:var(--text-dim); text-align:center; padding: 1rem;">Пусто</p>';
+          return;
+        }
+
+        container.innerHTML = items.map(item => {
+          const date = new Date(item.created_at).toLocaleString('ru-RU');
+          let questionsCount = 0;
+          try {
+            const parsed = JSON.parse(item.generated_result);
+            questionsCount = parsed.questions ? parsed.questions.length : 0;
+          } catch(e) {}
+
+          return `
+            <div class="history-item" onclick='loadSurveyFromHistory(${item.id}, ${JSON.stringify(JSON.parse(item.generated_result)).replace(/'/g, "\\'")})'>
+              <div class="history-date">${date}</div>
+              <div class="history-meta">
+                <span class="history-badge">${questionsCount} вопр.</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('Ошибка истории:', e);
+      }
+    }
+
+    function loadSurveyFromHistory(id, data) {
+      document.getElementById('jsonEditor').value = JSON.stringify(data, null, 2);
+      renderResult(data, '', '');
+      document.getElementById('result').classList.add('active');
+      document.getElementById('result').scrollIntoView({behavior: 'smooth'});
+    }
+
+    async function generateSurvey() {
+      const journey = document.getElementById('journey').value.trim();
+      const hint = document.getElementById('hint').value.trim();
+      const errorEl = document.getElementById('error');
+      const loadingEl = document.getElementById('loading');
+      const resultEl = document.getElementById('result');
+
+      errorEl.classList.remove('active');
+      if (!journey) {
+        errorEl.textContent = 'Введите путь клиента';
+        errorEl.classList.add('active');
+        return;
+      }
+
+      loadingEl.classList.add('active');
+      resultEl.classList.remove('active');
+      document.getElementById('generateBtn').disabled = true;
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ journey, hint })
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.detail || `Ошибка ${response.status}`);
+        }
+
+        const data = await response.json();
+        renderResult(data, journey, hint);
+        resultEl.classList.add('active');
+        loadHistory(); // Обновляем историю после генерации
+      } catch (e) {
+        errorEl.textContent = `${e.message}`;
+        errorEl.classList.add('active');
+      } finally {
+        loadingEl.classList.remove('active');
+        document.getElementById('generateBtn').disabled = false;
+      }
+    }
+
+    function renderResult(data, journey, hint) {
+      document.getElementById('resCategory').textContent = data.category || '—';
+      document.getElementById('resRelevance').textContent =
+        data.relevance !== undefined ? (data.relevance * 100).toFixed(0) + '%' : '—';
+
+      const tbody = document.querySelector('#questionsTable tbody');
+      tbody.innerHTML = '';
+      (data.questions || []).forEach((q, i) => {
+        const row = tbody.insertRow();
+        row.insertCell(0).textContent = i + 1;
+        row.insertCell(1).textContent = q;
+      });
+
+      document.getElementById('promptPreview').textContent =
+        `SYSTEM: [prompts.py]\n\nUSER: Путь: ${journey}\nПодсказка: ${hint || '—'}`;
+      document.getElementById('jsonEditor').value = JSON.stringify(data, null, 2);
+    }
+
+    function applyEdit() {
+      try {
+        const edited = JSON.parse(document.getElementById('jsonEditor').value);
+        renderResult(edited, '', '');
+      } catch {
+        alert('Некорректный JSON');
+      }
+    }
+
+    function exportJSON() {
+      try {
+        const data = JSON.parse(document.getElementById('jsonEditor').value);
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `survey_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch {
+        alert('Ошибка экспорта');
+      }
+    }
+
+    // Загружаем историю при старте
+    window.addEventListener('DOMContentLoaded', loadHistory);
+  </script>
+</body>
+</html>
