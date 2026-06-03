@@ -1,13 +1,11 @@
-# database.py
 import sqlite3
 import json
-from datetime import datetime
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent / "surveys.db"
 
 def init_db():
-    """Создает таблицу, если она не существует."""
+    # создаем таблицу, если ее нет
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute("""
@@ -24,8 +22,8 @@ def init_db():
         """)
         conn.commit()
 
-def save_survey(journey: str, hint: str, result: dict, prompt: str = None, edited_result: dict = None, model_name: str = None):
-    """Сохраняет данные опроса в базу."""
+def save_survey(journey, hint, result, prompt=None, edited_result=None, model_name=None):
+    # пишем опрос в базу. результат сериализуем в json
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute("""
@@ -43,11 +41,10 @@ def save_survey(journey: str, hint: str, result: dict, prompt: str = None, edite
         conn.commit()
         return cursor.lastrowid
 
-def get_all_surveys(limit: int = 50):
-    """Возвращает список последних опросов."""
+def get_all_surveys(limit=50):
+    # берем последние опросы, сортируем по дате
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM surveys ORDER BY created_at DESC LIMIT ?", (limit,))
-        rows = cursor.fetchall()
-        return [dict(row) for row in rows]
+        return [dict(row) for row in cursor.fetchall()]

@@ -1,49 +1,40 @@
-# llm_client.py
 import requests
 import json
-from typing import Any, Union
+from prompts import SYSTEM_PROMPT
 
 LM_STUDIO_URL = "http://localhost:1234/v1/chat/completions"
 
 
-def generate_survey_from_journey(journey: Union[str, dict], hint: str = None) -> dict:
-    # Формируем пользовательское сообщение
+def generate_survey_from_journey(journey, hint=None):
+    # собираем текст для модели
     if isinstance(journey, dict):
         journey_text = json.dumps(journey, ensure_ascii=False)
     else:
         journey_text = str(journey)
 
-    user_content = f"Путь клиента: {journey_text}"
+    user_msg = f"Путь клиента: {journey_text}"
     if hint:
-        user_content += f"\n\nДополнительная подсказка: {hint}"
-
-    # Системный промпт импортируем из prompts.py
-    from prompts import SYSTEM_PROMPT
+        user_msg += f"\nПодсказка: {hint}"
 
     payload = {
-        "model": "local-model",  # LM Studio игнорирует это поле, но оно обязательно
+        "model": "local-model",
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_content}
+            {"role": "user", "content": user_msg}
         ],
         "temperature": 0.3,
         "max_tokens": 1024,
         "stream": False
     }
 
-    headers = {
-        "Content-Type": "application/json"
-    }
-
     try:
-        response = requests.post(LM_STUDIO_URL, json=payload, headers=headers, timeout=120)
-        response.raise_for_status()
-        result = response.json()
+        # стучимся в локальную студию
+        resp = requests.post(LM_STUDIO_URL, json=payload, timeout=120)
+        resp.raise_for_status()
+        data = resp.json()
 
-        # Парсим ответ модели
-        content = result["choices"][0]["message"]["content"].strip()
+        content = data["choices"][0]["message"]["content"].strip()
 
-        # Пробуем извлечь JSON из ответа (модель может добавить текст до/после)
         if "```json" in content:
             content = content.split("```json")[1].split("```")[0].strip()
         elif "```" in content:
@@ -52,10 +43,9 @@ def generate_survey_from_journey(journey: Union[str, dict], hint: str = None) ->
         return json.loads(content)
 
     except requests.exceptions.ConnectionError:
-        raise ConnectionError("Не удалось подключиться к LM Studio. Убедись, что сервер запущен на localhost:1234")
+        raise ConnectionError("LM Studio не отвечает. Проверь, запущена ли она на 1234 порту")
     except requests.exceptions.Timeout:
-        raise TimeoutError("Превышено время ожидания ответа от модели")
+        raise TimeoutError("Модель тупит, таймаут")
     except json.JSONDecodeError as e:
-        raise ValueError(f"Модель вернула невалидный JSON: {content[:200]}... Ошибка парсинга: {e}")
-    except Exception as e:
-        raise RuntimeError(f"Ошибка при генерации: {type(e).__name__}: {e}")
+        # защита от невалидного json
+        raise ValueError(f"Кривой JSON от модели: {content[:200]}... Ошибка: {e}")
